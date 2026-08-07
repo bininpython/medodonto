@@ -1,12 +1,39 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
+const dummyQuery = {
+  select: () => dummyQuery,
+  eq: () => dummyQuery,
+  lt: () => dummyQuery,
+  lte: () => dummyQuery,
+  gt: () => dummyQuery,
+  gte: () => dummyQuery,
+  order: () => dummyQuery,
+  limit: () => dummyQuery,
+  ilike: () => dummyQuery,
+  update: () => dummyQuery,
+  insert: () => dummyQuery,
+  delete: () => dummyQuery,
+  single: async () => ({ data: null, error: null }),
+  then: (resolve: any) => resolve({ data: [], error: null }),
+};
+
 export async function createClient() {
   const cookieStore = await cookies();
 
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL.includes("dummy")) {
+    return {
+      auth: {
+        getUser: async () => ({ data: { user: null }, error: null }),
+        signOut: async () => ({ error: null }),
+      },
+      from: () => dummyQuery,
+    } as any;
+  }
+
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || "https://dummy.supabase.co",
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "dummy",
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         getAll() {

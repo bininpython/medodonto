@@ -9,138 +9,161 @@ import { format, subMonths, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
-  const now = new Date();
-  const currentMonthStart = startOfMonth(now).toISOString().split("T")[0];
-  const currentMonthEnd = endOfMonth(now).toISOString().split("T")[0];
-  const prevMonthStart = startOfMonth(subMonths(now, 1))
-    .toISOString()
-    .split("T")[0];
-  const prevMonthEnd = endOfMonth(subMonths(now, 1))
-    .toISOString()
-    .split("T")[0];
-
-  // Current month income (received only)
-  const { data: currentIncome } = await supabase
-    .from("transactions")
-    .select("amount")
-    .eq("type", "income")
-    .eq("status", "received")
-    .gte("transaction_date", currentMonthStart)
-    .lte("transaction_date", currentMonthEnd);
-
-  // Current month expenses (paid only)
-  const { data: currentExpenses } = await supabase
-    .from("transactions")
-    .select("amount")
-    .eq("type", "expense")
-    .eq("status", "paid")
-    .gte("transaction_date", currentMonthStart)
-    .lte("transaction_date", currentMonthEnd);
-
-  // Previous month income
-  const { data: prevIncome } = await supabase
-    .from("transactions")
-    .select("amount")
-    .eq("type", "income")
-    .eq("status", "received")
-    .gte("transaction_date", prevMonthStart)
-    .lte("transaction_date", prevMonthEnd);
-
-  // Previous month expenses
-  const { data: prevExpenses } = await supabase
-    .from("transactions")
-    .select("amount")
-    .eq("type", "expense")
-    .eq("status", "paid")
-    .gte("transaction_date", prevMonthStart)
-    .lte("transaction_date", prevMonthEnd);
-
-  // Total balance (all time)
-  const { data: allIncome } = await supabase
-    .from("transactions")
-    .select("amount")
-    .eq("type", "income")
-    .eq("status", "received");
-
-  const { data: allExpenses } = await supabase
-    .from("transactions")
-    .select("amount")
-    .eq("type", "expense")
-    .eq("status", "paid");
-
-  // Recent transactions
-  const { data: recentTx } = await supabase
-    .from("transactions")
-    .select("id, description, type, amount, transaction_date, category_id, categories(name)")
-    .order("transaction_date", { ascending: false })
-    .order("created_at", { ascending: false })
-    .limit(10);
-
-  // Monthly data for charts (last 12 months)
+  let currentIncome = null;
+  let currentExpenses = null;
+  let prevIncome = null;
+  let prevExpenses = null;
+  let allIncome = null;
+  let allExpenses = null;
+  let recentTx = null;
+  
   const monthlyData = [];
   let cumulativeSaldo = 0;
 
-  // Pre-calculate initial balance before 12 months ago
-  const twelveMonthsAgo = startOfMonth(subMonths(now, 11))
-    .toISOString()
-    .split("T")[0];
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    try {
+      const supabase = await createClient();
+      
+      // Current month income (received only)
+      const { data: ci } = await supabase
+        .from("transactions")
+        .select("amount")
+        .eq("type", "income")
+        .eq("status", "received")
+        .gte("transaction_date", currentMonthStart)
+        .lte("transaction_date", currentMonthEnd);
+      currentIncome = ci;
 
-  const { data: preIncome } = await supabase
-    .from("transactions")
-    .select("amount")
-    .eq("type", "income")
-    .eq("status", "received")
-    .lt("transaction_date", twelveMonthsAgo);
+      // Current month expenses (paid only)
+      const { data: ce } = await supabase
+        .from("transactions")
+        .select("amount")
+        .eq("type", "expense")
+        .eq("status", "paid")
+        .gte("transaction_date", currentMonthStart)
+        .lte("transaction_date", currentMonthEnd);
+      currentExpenses = ce;
 
-  const { data: preExpenses } = await supabase
-    .from("transactions")
-    .select("amount")
-    .eq("type", "expense")
-    .eq("status", "paid")
-    .lt("transaction_date", twelveMonthsAgo);
+      // Previous month income
+      const { data: pi } = await supabase
+        .from("transactions")
+        .select("amount")
+        .eq("type", "income")
+        .eq("status", "received")
+        .gte("transaction_date", prevMonthStart)
+        .lte("transaction_date", prevMonthEnd);
+      prevIncome = pi;
 
-  cumulativeSaldo =
-    (preIncome || []).reduce((sum, t) => sum + Number(t.amount), 0) -
-    (preExpenses || []).reduce((sum, t) => sum + Number(t.amount), 0);
+      // Previous month expenses
+      const { data: pe } = await supabase
+        .from("transactions")
+        .select("amount")
+        .eq("type", "expense")
+        .eq("status", "paid")
+        .gte("transaction_date", prevMonthStart)
+        .lte("transaction_date", prevMonthEnd);
+      prevExpenses = pe;
 
-  for (let i = 11; i >= 0; i--) {
-    const monthDate = subMonths(now, i);
-    const mStart = startOfMonth(monthDate).toISOString().split("T")[0];
-    const mEnd = endOfMonth(monthDate).toISOString().split("T")[0];
+      // Total balance (all time)
+      const { data: ai } = await supabase
+        .from("transactions")
+        .select("amount")
+        .eq("type", "income")
+        .eq("status", "received");
+      allIncome = ai;
 
-    const { data: mIncome } = await supabase
-      .from("transactions")
-      .select("amount")
-      .eq("type", "income")
-      .eq("status", "received")
-      .gte("transaction_date", mStart)
-      .lte("transaction_date", mEnd);
+      const { data: ae } = await supabase
+        .from("transactions")
+        .select("amount")
+        .eq("type", "expense")
+        .eq("status", "paid");
+      allExpenses = ae;
 
-    const { data: mExpenses } = await supabase
-      .from("transactions")
-      .select("amount")
-      .eq("type", "expense")
-      .eq("status", "paid")
-      .gte("transaction_date", mStart)
-      .lte("transaction_date", mEnd);
+      // Recent transactions
+      const { data: rtx } = await supabase
+        .from("transactions")
+        .select("id, description, type, amount, transaction_date, category_id, categories(name)")
+        .order("transaction_date", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(10);
+      recentTx = rtx;
 
-    const entradas = (mIncome || []).reduce(
-      (sum, t) => sum + Number(t.amount),
-      0
-    );
-    const despesas = (mExpenses || []).reduce(
-      (sum, t) => sum + Number(t.amount),
-      0
-    );
-    cumulativeSaldo += entradas - despesas;
+      // Pre-calculate initial balance before 12 months ago
+      const twelveMonthsAgo = startOfMonth(subMonths(now, 11))
+        .toISOString()
+        .split("T")[0];
 
-    monthlyData.push({
-      month: format(monthDate, "MMM", { locale: ptBR }),
-      entradas,
-      despesas,
-      saldo: cumulativeSaldo,
-    });
+      const { data: preIncome } = await supabase
+        .from("transactions")
+        .select("amount")
+        .eq("type", "income")
+        .eq("status", "received")
+        .lt("transaction_date", twelveMonthsAgo);
+
+      const { data: preExpenses } = await supabase
+        .from("transactions")
+        .select("amount")
+        .eq("type", "expense")
+        .eq("status", "paid")
+        .lt("transaction_date", twelveMonthsAgo);
+
+      cumulativeSaldo =
+        (preIncome || []).reduce((sum, t) => sum + Number(t.amount), 0) -
+        (preExpenses || []).reduce((sum, t) => sum + Number(t.amount), 0);
+
+      for (let i = 11; i >= 0; i--) {
+        const monthDate = subMonths(now, i);
+        const mStart = startOfMonth(monthDate).toISOString().split("T")[0];
+        const mEnd = endOfMonth(monthDate).toISOString().split("T")[0];
+
+        const { data: mIncome } = await supabase
+          .from("transactions")
+          .select("amount")
+          .eq("type", "income")
+          .eq("status", "received")
+          .gte("transaction_date", mStart)
+          .lte("transaction_date", mEnd);
+
+        const { data: mExpenses } = await supabase
+          .from("transactions")
+          .select("amount")
+          .eq("type", "expense")
+          .eq("status", "paid")
+          .gte("transaction_date", mStart)
+          .lte("transaction_date", mEnd);
+
+        const entradas = (mIncome || []).reduce(
+          (sum, t) => sum + Number(t.amount),
+          0
+        );
+        const despesas = (mExpenses || []).reduce(
+          (sum, t) => sum + Number(t.amount),
+          0
+        );
+        cumulativeSaldo += entradas - despesas;
+
+        monthlyData.push({
+          month: format(monthDate, "MMM", { locale: ptBR }),
+          entradas,
+          despesas,
+          saldo: cumulativeSaldo,
+        });
+      }
+    } catch (error) {
+      console.error("Dashboard data fetch error:", error);
+    }
+  }
+
+  // Se o Supabase não estiver configurado, preencher o array mensal com zero para evitar quebrar o gráfico
+  if (monthlyData.length === 0) {
+    for (let i = 11; i >= 0; i--) {
+      monthlyData.push({
+        month: format(subMonths(now, i), "MMM", { locale: ptBR }),
+        entradas: 0,
+        despesas: 0,
+        saldo: 0,
+      });
+    }
   }
 
   // Calculate totals

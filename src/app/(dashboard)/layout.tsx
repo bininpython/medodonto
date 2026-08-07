@@ -8,24 +8,26 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  // Temporarily bypass login for now
-  // if (!user) {
-  //   redirect("/login");
-  // }
-
+  let user = null;
   let profile = null;
-  if (user) {
-    const { data } = await supabase
-      .from("profiles")
-      .select("name, email")
-      .eq("id", user.id)
-      .single();
-    profile = data;
+
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    try {
+      const supabase = await createClient();
+      const { data } = await supabase.auth.getUser();
+      user = data.user;
+
+      if (user) {
+        const { data: p } = await supabase
+          .from("profiles")
+          .select("name, email")
+          .eq("id", user.id)
+          .single();
+        profile = p;
+      }
+    } catch (e) {
+      console.error("Supabase error:", e);
+    }
   }
 
   const userName = profile?.name || user?.email?.split("@")[0] || "Administrador";
