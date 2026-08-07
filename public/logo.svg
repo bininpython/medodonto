@@ -1,11 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" fill="none">
-  <rect width="400" height="400" fill="white"/>
-  <!-- M letter -->
-  <path d="M60 280V160L100 230L140 160V280" stroke="#1B2A5B" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-  <!-- C arc / curved element in pink/rose -->
-  <path d="M230 140C270 100 310 120 310 170C310 220 270 280 230 280" stroke="#E8426F" stroke-width="20" stroke-linecap="round" fill="none"/>
-  <!-- Small inner arc -->
-  <path d="M220 170C245 140 270 155 270 185C270 215 245 250 220 250" stroke="#E8426F" stroke-width="14" stroke-linecap="round" fill="none"/>
-  <!-- O letter -->
-  <circle cx="340" cy="220" r="55" stroke="#1B2A5B" stroke-width="20" fill="none"/>
+  <!-- M -->
+  <path d="M 70 260 L 70 140 L 120 210 L 170 140 L 170 260" stroke="#1B2A5B" stroke-width="14" stroke-linejoin="miter" stroke-linecap="butt" fill="none"/>
+  
+  <!-- Arc ( -->
+  <path d="M 255 120 Q 205 200 255 280" stroke="#E8426F" stroke-width="24" stroke-linecap="round" fill="none"/>
+  
+  <!-- O -->
+  <circle cx="315" cy="200" r="42" stroke="#1B2A5B" stroke-width="14" fill="none"/>
 </svg>
