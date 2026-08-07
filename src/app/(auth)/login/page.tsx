@@ -30,13 +30,32 @@ export default function LoginPage() {
     setIsLoading(true);
     setError(null);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email: data.email,
+    const fakeEmail = `${data.username.trim()}@medodonto.com.br`.toLowerCase();
+
+    let { error } = await supabase.auth.signInWithPassword({
+      email: fakeEmail,
       password: data.password,
     });
 
+    // Auto-criação para os usuários no primeiro acesso
+    if (error?.message === "Invalid login credentials") {
+      const { error: signUpError } = await supabase.auth.signUp({
+        email: fakeEmail,
+        password: data.password,
+      });
+
+      if (!signUpError) {
+        // Logar logo após a criação
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: fakeEmail,
+          password: data.password,
+        });
+        error = signInError;
+      }
+    }
+
     if (error) {
-      setError("E-mail ou senha incorretos.");
+      setError("Código ou senha incorretos.");
       setIsLoading(false);
       return;
     }
@@ -72,19 +91,19 @@ export default function LoginPage() {
         )}
 
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-navy font-medium text-sm">
-            E-mail
+          <Label htmlFor="username" className="text-navy font-medium text-sm">
+            Código de Acesso
           </Label>
           <Input
-            id="email"
-            type="email"
-            placeholder="seu@email.com"
-            autoComplete="email"
-            {...register("email")}
+            id="username"
+            type="text"
+            placeholder="Ex: israel"
+            autoComplete="username"
+            {...register("username")}
             className="h-11"
           />
-          {errors.email && (
-            <p className="text-xs text-red-500">{errors.email.message}</p>
+          {errors.username && (
+            <p className="text-xs text-red-500">{errors.username.message}</p>
           )}
         </div>
 
