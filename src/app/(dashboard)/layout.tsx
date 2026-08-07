@@ -13,19 +13,23 @@ export default async function DashboardLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect("/login");
+  // Temporarily bypass login for now
+  // if (!user) {
+  //   redirect("/login");
+  // }
+
+  let profile = null;
+  if (user) {
+    const { data } = await supabase
+      .from("profiles")
+      .select("name, email")
+      .eq("id", user.id)
+      .single();
+    profile = data;
   }
 
-  // Get profile
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("name, email")
-    .eq("id", user.id)
-    .single();
-
-  const userName = profile?.name || user.email?.split("@")[0] || "Usuário";
-  const userEmail = profile?.email || user.email || "";
+  const userName = profile?.name || user?.email?.split("@")[0] || "Administrador";
+  const userEmail = profile?.email || user?.email || "admin@medodonto.com.br";
 
   return (
     <div className="min-h-screen bg-[#F4F6F9]">
