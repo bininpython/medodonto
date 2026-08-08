@@ -9,6 +9,16 @@ import { format, subMonths, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 export default async function DashboardPage() {
+  const now = new Date();
+  const currentMonthStart = startOfMonth(now).toISOString().split("T")[0];
+  const currentMonthEnd = endOfMonth(now).toISOString().split("T")[0];
+  const prevMonthStart = startOfMonth(subMonths(now, 1))
+    .toISOString()
+    .split("T")[0];
+  const prevMonthEnd = endOfMonth(subMonths(now, 1))
+    .toISOString()
+    .split("T")[0];
+
   let currentIncome = null;
   let currentExpenses = null;
   let prevIncome = null;

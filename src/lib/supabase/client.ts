@@ -1,4 +1,5 @@
 import { createBrowserClient } from "@supabase/ssr";
+import { SupabaseClient } from "@supabase/supabase-js";
 
 const dummyQuery = {
   select: () => dummyQuery,
@@ -25,7 +26,7 @@ export function createClient() {
         signOut: async () => ({ error: null }),
       },
       from: () => dummyQuery,
-    } as any;
+    } as unknown as SupabaseClient<any, "public", any>;
   }
 
   return createBrowserClient(

@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { SupabaseClient } from "@supabase/supabase-js";
 
 const dummyQuery = {
   select: () => dummyQuery,
@@ -28,7 +29,7 @@ export async function createClient() {
         signOut: async () => ({ error: null }),
       },
       from: () => dummyQuery,
-    } as any;
+    } as unknown as SupabaseClient<any, "public", any>;
   }
 
   return createServerClient(
